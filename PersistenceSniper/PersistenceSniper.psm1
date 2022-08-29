@@ -104,7 +104,11 @@ function Find-AllPersistence
         
     [Parameter(Position = 3)]
     [String]
-    $OutputCSV = $null  
+    $OutputCSV = $null, 
+	
+	[Parameter(Position = 4)]
+	[String]
+	$VTApiKey = $null
   )
   
   $ScriptBlock = 
@@ -156,7 +160,10 @@ function Find-AllPersistence
         $IsBuiltinBinary = $false,
 		
         [Bool]
-        $IsLolbin = $false
+        $IsLolbin = $false,
+		
+		[String]
+		$VTEntries = $null
       )
       $PersistenceObject = [PSCustomObject]@{
         'Hostname' 			  = $Hostname
@@ -169,11 +176,39 @@ function Find-AllPersistence
         'Reference'    		= $Reference
         'Signature'	  		= Find-CertificateInfo (Get-ExecutableFromCommandLine $Value)
         'IsBuiltinBinary'	= Get-IfBuiltinBinary (Get-ExecutableFromCommandLine $Value)
-        'IsLolbin'			  = Get-IfLolBin (Get-ExecutableFromCommandLine $Value)
+        'IsLolbin'			= Get-IfLolBin (Get-ExecutableFromCommandLine $Value)
+		'VTEntries'			= CheckHashAgainstVT(Get-ExecutableFromCommandLine $Value)
       } 
       return $PersistenceObject
     }
 	
+	function CheckHashAgainstVT($executable)
+	{
+		$authenticode = Get-AuthenticodeSignature($executable)
+		if ($authenticode.IsOSBinary -eq $false) {
+			if ($VTApiKey)
+			{
+				$headers = @{
+						'x-apikey' = $VTApiKey
+				}
+				$hash = (Get-FileHash $executable).Hash
+				$result = Invoke-RestMethod -Headers $headers "https://www.virustotal.com/api/v3/search?query=$hash"
+				Sleep 1
+				if ($result.data) {
+					$result.data.attributes.last_analysis_stats.malicious
+				} else {
+					return "0"
+				}
+			}
+			else {
+				return "N/A"
+			}
+		}
+		else {
+				return "N/A"
+			}
+		
+	}
 	
     function Get-IfLolBin
     {

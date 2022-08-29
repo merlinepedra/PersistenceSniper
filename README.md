@@ -52,6 +52,7 @@ $PersistenceObject = [PSCustomObject]@{
       'Signature' = Find-CertificateInfo (Get-ExecutableFromCommandLine $Value)
       'IsBuiltinBinary' = Get-IfBuiltinBinary (Get-ExecutableFromCommandLine $Value)
       'IsLolbin' = Get-IfLolBin (Get-ExecutableFromCommandLine $Value)
+	  'VTEntries' = CheckHashAgainstVT(Get-ExecutableFromCommandLine $Value)
 } 
 ```
 
@@ -80,7 +81,7 @@ As already introduced, `Find-AllPersistence` outputs an array of Powershell Cust
 - Signature: this property reports information on the signature of the binary associated with the persistence technique found;
 - IsBuiltinBinary: this boolean property reports if the binary associated with the persistence technique found is normally found on the Operating System and is considered builtin;
 - IsLolbin: this boolean property is set to True if the the binary associated with the persistence technique found is a [LOLBin](https://lolbas-project.github.io/).
-
+- VTEntries: this property will be populated if the parameter `-VTApiKey` is present; a value different from "N/A" will indicate that the identified file is known and has zero or more detections.
 
 ## Dealing with false positives
 Let's face it, hunting for persistence techniques also comes with having to deal with a lot of false positives. This happens because, while some techniques are almost never legimately used, many indeed are by legit software which needs to autorun on system boot or user login.
